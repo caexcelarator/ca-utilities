@@ -12,8 +12,6 @@
       color: #1a1a1a;
       min-height: 100vh;
     }
-
-    /* --- Navbar --- */
     .navbar {
       background: #fff;
       border-bottom: 1px solid #e0e0e0;
@@ -38,8 +36,6 @@
       color: #555;
       margin-right: 12px;
     }
-
-    /* --- Main layout --- */
     .container {
       max-width: 860px;
       margin: 40px auto;
@@ -47,8 +43,6 @@
     }
     .page-title { font-size: 1.6rem; font-weight: 600; margin-bottom: 6px; }
     .page-sub   { color: #666; font-size: 0.95rem; margin-bottom: 32px; }
-
-    /* --- Login wall --- */
     #login-wall {
       text-align: center;
       padding: 60px 20px;
@@ -58,7 +52,7 @@
     }
     #login-wall h2 { font-size: 1.2rem; margin-bottom: 10px; }
     #login-wall p  { color: #666; margin-bottom: 24px; }
-    #login-wall button {
+    #login-wall-btn {
       padding: 12px 28px;
       background: #4f46e5;
       color: #fff;
@@ -67,9 +61,7 @@
       font-size: 1rem;
       cursor: pointer;
     }
-    #login-wall button:hover { background: #4338ca; }
-
-    /* --- Tool UI --- */
+    #login-wall-btn:hover { background: #4338ca; }
     #tool-ui { display: none; }
     .card {
       background: #fff;
@@ -106,8 +98,6 @@
       border-color: #4f46e5;
       background: #fff;
     }
-
-    /* --- Generate button --- */
     #generate-btn {
       width: 100%;
       padding: 14px;
@@ -120,13 +110,8 @@
       cursor: pointer;
       margin-top: 8px;
     }
-    #generate-btn:hover   { background: #4338ca; }
-    #generate-btn:disabled {
-      background: #a5b4fc;
-      cursor: not-allowed;
-    }
-
-    /* --- Reply output --- */
+    #generate-btn:hover    { background: #4338ca; }
+    #generate-btn:disabled { background: #a5b4fc; cursor: not-allowed; }
     #reply-section { display: none; }
     #reply-box {
       width: 100%;
@@ -154,12 +139,10 @@
       border: 1px solid #e0e0e0;
       background: #fff;
     }
-    #copy-btn  { background: #4f46e5; color: #fff; border-color: #4f46e5; }
-    #copy-btn:hover  { background: #4338ca; }
-    #save-btn  { background: #10b981; color: #fff; border-color: #10b981; }
-    #save-btn:hover  { background: #059669; }
-
-    /* --- Status message --- */
+    #copy-btn { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+    #copy-btn:hover { background: #4338ca; }
+    #save-btn { background: #10b981; color: #fff; border-color: #10b981; }
+    #save-btn:hover { background: #059669; }
     #status {
       margin-top: 12px;
       font-size: 0.9rem;
@@ -167,9 +150,12 @@
       text-align: center;
       min-height: 20px;
     }
-
-    /* --- Loader --- */
-    #loader { display: none; text-align: center; padding: 20px; color: #666; }
+    #loader {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
   </style>
 </head>
 <body>
@@ -179,7 +165,7 @@
     <div class="brand">CA <span>Utilities</span></div>
     <div style="display:flex;align-items:center">
       <span id="user-name"></span>
-      <button id="auth-btn" onclick="handleAuth()">Sign in with Google</button>
+      <button id="auth-btn">Sign in with Google</button>
     </div>
   </div>
 
@@ -187,17 +173,15 @@
     <div class="page-title">GST Notice Reply Simulator</div>
     <div class="page-sub">Paste a GST notice and get a structured draft reply in seconds</div>
 
-    <!-- Login wall — shown when not logged in -->
+    <!-- Login wall -->
     <div id="login-wall">
       <h2>Please sign in to use this tool</h2>
       <p>Your reports are saved securely to your account</p>
-      <button onclick="handleAuth()">Sign in with Google</button>
+      <button id="login-wall-btn">Sign in with Google</button>
     </div>
 
-    <!-- Tool UI — shown when logged in -->
+    <!-- Tool UI -->
     <div id="tool-ui">
-
-      <!-- Input card -->
       <div class="card">
         <h2>Notice details</h2>
 
@@ -225,27 +209,24 @@
 
         <label>Additional context (optional)</label>
         <textarea id="extra-context" rows="3"
-          placeholder="Any extra details — e.g. reason for mismatch, documents available, etc."></textarea>
+          placeholder="Any extra details — e.g. reason for mismatch, documents available..."></textarea>
 
-        <button id="generate-btn" onclick="generateReply()">
-          Generate Draft Reply
-        </button>
+        <button id="generate-btn">Generate Draft Reply</button>
         <div id="status"></div>
       </div>
 
       <!-- Loader -->
       <div id="loader">Generating reply using AI — please wait...</div>
 
-      <!-- Reply output card -->
+      <!-- Reply output -->
       <div class="card" id="reply-section">
         <h2>Draft reply — review and edit before use</h2>
         <textarea id="reply-box"></textarea>
         <div class="reply-actions">
-          <button id="copy-btn" onclick="copyReply()">Copy to clipboard</button>
-          <button id="save-btn" onclick="saveReport()">Save to my reports</button>
+          <button id="copy-btn">Copy to clipboard</button>
+          <button id="save-btn">Save to my reports</button>
         </div>
       </div>
-
     </div>
   </div>
 
@@ -254,7 +235,7 @@
 
     let currentUser = null;
 
-    // Auth state listener
+    // Watch login state
     onAuthChange((user) => {
       currentUser = user;
       if (user) {
@@ -270,20 +251,27 @@
       }
     });
 
-    window.handleAuth = async function() {
+    // Navbar auth button
+    document.getElementById("auth-btn").addEventListener("click", async () => {
       if (currentUser) {
         await signOutUser();
       } else {
         await signIn();
       }
-    };
+    });
 
-    window.generateReply = async function() {
-      const clientName  = document.getElementById("client-name").value.trim();
-      const gstin       = document.getElementById("gstin").value.trim();
-      const noticeType  = document.getElementById("notice-type").value;
-      const noticeText  = document.getElementById("notice-text").value.trim();
-      const extraCtx    = document.getElementById("extra-context").value.trim();
+    // Login wall button
+    document.getElementById("login-wall-btn").addEventListener("click", async () => {
+      await signIn();
+    });
+
+    // Generate reply button
+    document.getElementById("generate-btn").addEventListener("click", async () => {
+      const clientName = document.getElementById("client-name").value.trim();
+      const gstin      = document.getElementById("gstin").value.trim();
+      const noticeType = document.getElementById("notice-type").value;
+      const noticeText = document.getElementById("notice-text").value.trim();
+      const extraCtx   = document.getElementById("extra-context").value.trim();
 
       if (!noticeText) {
         document.getElementById("status").textContent = "Please paste the notice text first.";
@@ -306,26 +294,36 @@
         document.getElementById("generate-btn").disabled = false;
         document.getElementById("loader").style.display = "none";
       }
-    };
+    });
 
+    // Mistral call — placeholder until Step 5
     async function callMistral(clientName, gstin, noticeType, noticeText, extraCtx) {
-      // This will call our Firebase Cloud Function in Step 5
-      // For now returns a placeholder
-      return `[AI Reply will appear here after Step 5 — Firebase Cloud Function setup]\n\nClient: ${clientName}\nGSTIN: ${gstin}\nNotice Type: ${noticeType}`;
+      return `[AI Reply will appear here after Step 5 — Firebase Cloud Function setup]
+
+Client: ${clientName}
+GSTIN: ${gstin}
+Notice Type: ${noticeType}
+
+Notice Text Received:
+${noticeText}`;
     }
 
-    window.copyReply = function() {
+    // Copy to clipboard
+    document.getElementById("copy-btn").addEventListener("click", () => {
       const text = document.getElementById("reply-box").value;
       navigator.clipboard.writeText(text).then(() => {
         document.getElementById("status").textContent = "Copied to clipboard!";
-        setTimeout(() => document.getElementById("status").textContent = "", 2000);
+        setTimeout(() => {
+          document.getElementById("status").textContent = "";
+        }, 2000);
       });
-    };
+    });
 
-    window.saveReport = async function() {
-      // Will be wired to Firestore in Step 7
+    // Save report — wired in Step 7
+    document.getElementById("save-btn").addEventListener("click", () => {
       document.getElementById("status").textContent = "Save feature coming in Step 7!";
-    };
+    });
+
   </script>
 
 </body>
