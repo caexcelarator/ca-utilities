@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GST Notice Reply Simulator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+    }
+
+    /* --- Navbar --- */
+    .navbar {
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 14px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar .brand { font-weight: 600; font-size: 1rem; }
+    .navbar .brand span { color: #4f46e5; }
+    #auth-btn {
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    #auth-btn:hover { background: #f0f0f0; }
+    #user-name {
+      font-size: 0.85rem;
+      color: #555;
+      margin-right: 12px;
+    }
+
+    /* --- Main layout --- */
+    .container {
+      max-width: 860px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    .page-title { font-size: 1.6rem; font-weight: 600; margin-bottom: 6px; }
+    .page-sub   { color: #666; font-size: 0.95rem; margin-bottom: 32px; }
+
+    /* --- Login wall --- */
+    #login-wall {
+      text-align: center;
+      padding: 60px 20px;
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #e0e0e0;
+    }
+    #login-wall h2 { font-size: 1.2rem; margin-bottom: 10px; }
+    #login-wall p  { color: #666; margin-bottom: 24px; }
+    #login-wall button {
+      padding: 12px 28px;
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    #login-wall button:hover { background: #4338ca; }
+
+    /* --- Tool UI --- */
+    #tool-ui { display: none; }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #e0e0e0;
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #333;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 6px;
+      margin-top: 14px;
+    }
+    input[type="text"], select, textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      background: #fafafa;
+    }
+    textarea { resize: vertical; }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #4f46e5;
+      background: #fff;
+    }
+
+    /* --- Generate button --- */
+    #generate-btn {
+      width: 100%;
+      padding: 14px;
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    #generate-btn:hover   { background: #4338ca; }
+    #generate-btn:disabled {
+      background: #a5b4fc;
+      cursor: not-allowed;
+    }
+
+    /* --- Reply output --- */
+    #reply-section { display: none; }
+    #reply-box {
+      width: 100%;
+      min-height: 320px;
+      padding: 16px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      line-height: 1.7;
+      background: #fafafa;
+      resize: vertical;
+    }
+    .reply-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .reply-actions button {
+      flex: 1;
+      padding: 11px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+    }
+    #copy-btn  { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+    #copy-btn:hover  { background: #4338ca; }
+    #save-btn  { background: #10b981; color: #fff; border-color: #10b981; }
+    #save-btn:hover  { background: #059669; }
+
+    /* --- Status message --- */
+    #status {
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: #10b981;
+      text-align: center;
+      min-height: 20px;
+    }
+
+    /* --- Loader --- */
+    #loader { display: none; text-align: center; padding: 20px; color: #666; }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <div class="navbar">
+    <div class="brand">CA <span>Utilities</span></div>
+    <div style="display:flex;align-items:center">
+      <span id="user-name"></span>
+      <button id="auth-btn" onclick="handleAuth()">Sign in with Google</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="page-title">GST Notice Reply Simulator</div>
+    <div class="page-sub">Paste a GST notice and get a structured draft reply in seconds</div>
+
+    <!-- Login wall — shown when not logged in -->
+    <div id="login-wall">
+      <h2>Please sign in to use this tool</h2>
+      <p>Your reports are saved securely to your account</p>
+      <button onclick="handleAuth()">Sign in with Google</button>
+    </div>
+
+    <!-- Tool UI — shown when logged in -->
+    <div id="tool-ui">
+
+      <!-- Input card -->
+      <div class="card">
+        <h2>Notice details</h2>
+
+        <label>Client / Taxpayer name</label>
+        <input type="text" id="client-name" placeholder="e.g. Acme Pvt Ltd"/>
+
+        <label>GSTIN</label>
+        <input type="text" id="gstin" placeholder="e.g. 27AAPFU0939F1ZV"/>
+
+        <label>Notice type</label>
+        <select id="notice-type">
+          <option value="">-- Select notice type --</option>
+          <option value="ASMT-10">ASMT-10 — Scrutiny of returns</option>
+          <option value="DRC-01">DRC-01 — Demand notice</option>
+          <option value="DRC-10">DRC-10 — Auction notice</option>
+          <option value="GSTR-3A">GSTR-3A — Non-filing notice</option>
+          <option value="REG-03">REG-03 — Registration query</option>
+          <option value="REG-17">REG-17 — Cancellation notice</option>
+          <option value="other">Other</option>
+        </select>
+
+        <label>Paste the notice text here</label>
+        <textarea id="notice-text" rows="10"
+          placeholder="Paste the full text of the GST notice here..."></textarea>
+
+        <label>Additional context (optional)</label>
+        <textarea id="extra-context" rows="3"
+          placeholder="Any extra details — e.g. reason for mismatch, documents available, etc."></textarea>
+
+        <button id="generate-btn" onclick="generateReply()">
+          Generate Draft Reply
+        </button>
+        <div id="status"></div>
+      </div>
+
+      <!-- Loader -->
+      <div id="loader">Generating reply using AI — please wait...</div>
+
+      <!-- Reply output card -->
+      <div class="card" id="reply-section">
+        <h2>Draft reply — review and edit before use</h2>
+        <textarea id="reply-box"></textarea>
+        <div class="reply-actions">
+          <button id="copy-btn" onclick="copyReply()">Copy to clipboard</button>
+          <button id="save-btn" onclick="saveReport()">Save to my reports</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module">
+    import { signIn, signOutUser, onAuthChange } from "../../shared/auth.js";
+
+    let currentUser = null;
+
+    // Auth state listener
+    onAuthChange((user) => {
+      currentUser = user;
+      if (user) {
+        document.getElementById("login-wall").style.display = "none";
+        document.getElementById("tool-ui").style.display = "block";
+        document.getElementById("user-name").textContent = user.displayName;
+        document.getElementById("auth-btn").textContent = "Sign out";
+      } else {
+        document.getElementById("login-wall").style.display = "block";
+        document.getElementById("tool-ui").style.display = "none";
+        document.getElementById("user-name").textContent = "";
+        document.getElementById("auth-btn").textContent = "Sign in with Google";
+      }
+    });
+
+    window.handleAuth = async function() {
+      if (currentUser) {
+        await signOutUser();
+      } else {
+        await signIn();
+      }
+    };
+
+    window.generateReply = async function() {
+      const clientName  = document.getElementById("client-name").value.trim();
+      const gstin       = document.getElementById("gstin").value.trim();
+      const noticeType  = document.getElementById("notice-type").value;
+      const noticeText  = document.getElementById("notice-text").value.trim();
+      const extraCtx    = document.getElementById("extra-context").value.trim();
+
+      if (!noticeText) {
+        document.getElementById("status").textContent = "Please paste the notice text first.";
+        return;
+      }
+
+      document.getElementById("generate-btn").disabled = true;
+      document.getElementById("loader").style.display = "block";
+      document.getElementById("reply-section").style.display = "none";
+      document.getElementById("status").textContent = "";
+
+      try {
+        const reply = await callMistral(clientName, gstin, noticeType, noticeText, extraCtx);
+        document.getElementById("reply-box").value = reply;
+        document.getElementById("reply-section").style.display = "block";
+      } catch (err) {
+        document.getElementById("status").textContent = "Error generating reply. Please try again.";
+        console.error(err);
+      } finally {
+        document.getElementById("generate-btn").disabled = false;
+        document.getElementById("loader").style.display = "none";
+      }
+    };
+
+    async function callMistral(clientName, gstin, noticeType, noticeText, extraCtx) {
+      // This will call our Firebase Cloud Function in Step 5
+      // For now returns a placeholder
+      return `[AI Reply will appear here after Step 5 — Firebase Cloud Function setup]\n\nClient: ${clientName}\nGSTIN: ${gstin}\nNotice Type: ${noticeType}`;
+    }
+
+    window.copyReply = function() {
+      const text = document.getElementById("reply-box").value;
+      navigator.clipboard.writeText(text).then(() => {
+        document.getElementById("status").textContent = "Copied to clipboard!";
+        setTimeout(() => document.getElementById("status").textContent = "", 2000);
+      });
+    };
+
+    window.saveReport = async function() {
+      // Will be wired to Firestore in Step 7
+      document.getElementById("status").textContent = "Save feature coming in Step 7!";
+    };
+  </script>
+
+</body>
+</html>
